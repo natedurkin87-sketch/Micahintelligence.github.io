@@ -524,21 +524,29 @@ async function go() {
   showTyping();
 
   try {
-    const res = await fetch('/api/chat', {
+    const res = await fetch('https://openrouter.ai/api/v1/chat/completions', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer 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`,
+        'HTTP-Referer': window.location.origin,
+        'X-Title': 'Micah Intelligence',
+      },
       body: JSON.stringify({
-        system: SYSTEM,
-        messages: history
+        model: 'meta-llama/llama-4-maverick:free',
+        messages: [
+          { role: 'system', content: SYSTEM },
+          ...history
+        ]
       })
     });
     const data = await res.json();
     if (!res.ok) {
-      throw new Error(data.error || `Server error ${res.status}`);
+      throw new Error(data.error?.message || `Error ${res.status}`);
     }
-    const reply = (data.content || []).map(b => b.text || '').join('');
+    const reply = data.choices?.[0]?.message?.content || '';
     if (!reply) {
-      throw new Error('Empty response from server');
+      throw new Error('Empty response');
     }
     removeTyping();
     history.push({ role: 'assistant', content: reply });
